@@ -74,7 +74,7 @@ export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> 
   const genAI = new GoogleGenerativeAI(apiKey);
   // gemini-1.5-flash → gemini-2.0-flash へ更新（無料枠での安定性向上）
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-1.5-flash",
     generationConfig: { responseMimeType: "application/json" },
   });
 

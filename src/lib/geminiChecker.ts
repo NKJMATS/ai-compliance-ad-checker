@@ -64,7 +64,7 @@ const SYSTEM_PROMPT = `あなたは日本の広告法務の専門家AIです。
 - issuesは必ず配列で返すこと（問題がない場合は空配列[]）`;
 
 const GEMINI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> {
   const apiKey = process.env.GEMINI_API_KEY;

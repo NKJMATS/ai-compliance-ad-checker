@@ -72,7 +72,11 @@ export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> 
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // gemini-1.5-flash → gemini-2.0-flash へ更新（無料枠での安定性向上）
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  });
 
   const result = await model.generateContent([
     { text: SYSTEM_PROMPT },
@@ -80,8 +84,20 @@ export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> 
   ]);
 
   const raw = result.response.text().trim();
-  const jsonStr = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-  return JSON.parse(jsonStr) as CheckResult;
+
+  // マークダウンコードブロックの除去（フォールバック用）
+  const jsonStr = raw
+    .replace(/^```(?:json)?\r?\n?/, "")
+    .replace(/\r?\n?```$/, "")
+    .trim();
+
+  let parsed: CheckResult;
+  try {
+    parsed = JSON.parse(jsonStr) as CheckResult;
+  } catch {
+    throw new Error(`JSON parse failed. Raw response: ${raw.slice(0, 200)}`);
+  }
+  return parsed;
 }
 
 /** キーなし・API障害時のフォールバック */

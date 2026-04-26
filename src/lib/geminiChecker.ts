@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export type RiskLevel = "low" | "medium" | "high";
 
 export interface Issue {
@@ -65,23 +63,39 @@ const SYSTEM_PROMPT = `あなたは日本の広告法務の専門家AIです。
 - 問題がない場合もdetailには「問題のない理由」と「今後の注意点」を記載すること
 - issuesは必ず配列で返すこと（問題がない場合は空配列[]）`;
 
+const GEMINI_ENDPOINT =
+  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+
 export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
+  const res = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPT }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `【広告原稿】\n${text}` }],
+        },
+      ],
+    }),
+  });
 
-  const result = await model.generateContent([
-    { text: SYSTEM_PROMPT },
-    { text: `【広告原稿】\n${text}` },
-  ]);
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Gemini API ${res.status}: ${errBody.slice(0, 200)}`);
+  }
 
-  const raw = result.response.text().trim();
+  const json = await res.json();
+  const raw: string = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-  // マークダウンコードブロックの除去（フォールバック用）
   const jsonStr = raw
     .replace(/^```(?:json)?\r?\n?/, "")
     .replace(/\r?\n?```$/, "")

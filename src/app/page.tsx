@@ -85,8 +85,9 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
-      if (!res.ok) throw new Error("API error");
-      setResult(await res.json());
+      const data = await res.json();
+      if (!res.ok && res.status !== 503) throw new Error("API error");
+      setResult(data);
     } catch {
       setResult({
         score: 0,

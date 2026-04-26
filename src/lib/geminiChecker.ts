@@ -76,13 +76,10 @@ export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: SYSTEM_PROMPT }],
-      },
       contents: [
         {
           role: "user",
-          parts: [{ text: `【広告原稿】\n${text}` }],
+          parts: [{ text: `${SYSTEM_PROMPT}\n\n【広告原稿】\n${text}` }],
         },
       ],
     }),

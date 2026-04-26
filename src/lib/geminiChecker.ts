@@ -72,7 +72,7 @@ export async function checkAdCopyWithGemini(text: string): Promise<CheckResult> 
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
 
   const result = await model.generateContent([
     { text: SYSTEM_PROMPT },

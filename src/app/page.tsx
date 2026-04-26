@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle, XCircle, ShieldAlert, Loader2 } from "lucide-react";
-import { checkAdCopy, CheckResult, RiskLevel } from "@/lib/mockChecker";
+import { AlertTriangle, CheckCircle, XCircle, ShieldAlert, Loader2, BookOpen } from "lucide-react";
+import type { CheckResult, RiskLevel } from "@/lib/geminiChecker";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -79,10 +79,24 @@ export default function Home() {
     if (!text.trim()) return;
     setLoading(true);
     setResult(null);
-    // Simulate async processing (mock)
-    await new Promise((r) => setTimeout(r, 800));
-    setResult(checkAdCopy(text));
-    setLoading(false);
+    try {
+      const res = await fetch("/api/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error("API error");
+      setResult(await res.json());
+    } catch {
+      setResult({
+        score: 0,
+        riskLevel: "high",
+        summary: "診断中にエラーが発生しました。もう一度お試しください。",
+        issues: [],
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,7 +105,9 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200 py-4 px-6 flex items-center gap-3">
         <ShieldAlert className="w-6 h-6 text-indigo-600" />
         <h1 className="text-lg font-bold text-gray-900">AI広告コンプライアンスチェッカー</h1>
-        <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">MOCK MODE</span>
+        <span className="ml-auto text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-medium">
+          Powered by Gemini
+        </span>
       </header>
 
       {/* main */}
@@ -118,7 +134,7 @@ export default function Home() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                診断中…
+                AIが診断中…
               </>
             ) : (
               "コンプライアンス診断を実行"
@@ -140,6 +156,17 @@ export default function Home() {
               <RiskMeter score={result.score} />
               <p className="text-sm text-gray-700">{result.summary}</p>
             </div>
+
+            {/* AI detailed explanation */}
+            {result.detail && (
+              <div className="bg-white rounded-xl border border-indigo-100 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-indigo-700">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">AI専門家による詳細解説</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{result.detail}</p>
+              </div>
+            )}
 
             {/* issues */}
             {result.issues.length > 0 && (
@@ -182,7 +209,7 @@ export default function Home() {
           本ツールの診断結果は <strong>AIによる推定</strong> であり、法的助言・法的見解を構成するものではありません。
           薬機法・景表法等への最終的な適合判断は、必ず資格を有する法律専門家または行政機関にご確認ください。
         </p>
-        <p className="text-xs text-gray-400">© 2025 AI Compliance Ad-Checker MVP — Powered by Mock Engine</p>
+        <p className="text-xs text-gray-400">© 2025 AI Compliance Ad-Checker — Powered by Gemini 1.5 Flash</p>
       </footer>
     </div>
   );
